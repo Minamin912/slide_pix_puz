@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'tutorial_overlay.dart';
+
 void main() => runApp(const SlidePicrossApp());
 
 class SlidePicrossApp extends StatelessWidget {
@@ -35,6 +37,10 @@ class SlidePicrossGame extends StatefulWidget {
 class _SlidePicrossGameState extends State<SlidePicrossGame> {
   // ステージリスト定義
   late final List<StageData> _stages;
+
+  // Tutorial State
+  bool _showTutorial = true;
+  int _tutorialStep = 0;
 
   @override
   void initState() {
@@ -114,6 +120,24 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
       ),
     ];
     _loadStage(_currentStageIndex);
+    _checkTutorial();
+  }
+
+  void _checkTutorial() {
+    if (_currentStageIndex == 0) {
+      if (mounted) {
+        setState(() {
+          _showTutorial = true;
+          _tutorialStep = 0;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _showTutorial = false;
+        });
+      }
+    }
   }
 
   int _currentStageIndex = 0;
@@ -122,6 +146,7 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
   late StageData _currentStage;
   late List<List<int>> _rowHints;
   late List<List<int>> _colHints;
+  late List<List<int>> _currentColHints;
   late List<List<double>> _rowPositions; // マス目単位：0.0, 1.0...
   bool _isCleared = false;
 
@@ -130,9 +155,18 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
       _currentStageIndex = index;
       _currentStage = _stages[index];
       _rowHints = _generateRowHints(_currentStage.targetGrid);
+      _rowHints = _generateRowHints(_currentStage.targetGrid);
       _colHints = _generateColHints(_currentStage.targetGrid);
       _initializePositions();
+      _updateCurrentHints(); // Initial calculation
       _isCleared = false;
+      
+      if (index == 0) {
+        _showTutorial = true;
+        _tutorialStep = 0;
+      } else {
+        _showTutorial = false;
+      }
     });
     // ロード直後に判定（オートクリア等のチェック）
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -242,6 +276,7 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
 
     setState(() {
       _rowPositions[rowIndex] = currentPositions;
+      _updateCurrentHints();
     });
   }
 
@@ -260,6 +295,7 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
     
     setState(() {
       _rowPositions[rowIndex] = positions;
+      _updateCurrentHints();
       _checkWinCondition();
     });
   }
@@ -269,17 +305,7 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
     int gridSizeY = _currentStage.gridSizeY;
 
     // 現在の盤面情報を作成
-    List<List<int>> currentGrid = List.generate(gridSizeY, (_) => List.filled(gridSizeX, 0));
-
-    for (int y = 0; y < gridSizeY; y++) {
-      for (int i = 0; i < _rowPositions[y].length; i++) {
-        int start = _rowPositions[y][i].round();
-        int end = start + _rowHints[y][i];
-        for (int x = start; x < end; x++) {
-          if (x < gridSizeX) currentGrid[y][x] = 1;
-        }
-      }
-    }
+    List<List<int>> currentGrid = _generateCurrentGrid();
 
     // 正解と比較
     bool match = true;
@@ -311,9 +337,23 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE0D7C6),
-      appBar: AppBar(title: Text(_currentStage.title)),
-      // InteractiveViewerでズーム/パンを可能にする
-      body: LayoutBuilder(
+      appBar: AppBar(
+        title: Text(_currentStage.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              setState(() {
+                _showTutorial = true;
+                _tutorialStep = 0;
+              });
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          LayoutBuilder(
         builder: (context, constraints) {
           double availableWidth = constraints.maxWidth;
           double availableHeight = constraints.maxHeight - 50; 
@@ -385,6 +425,26 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
           );
         },
       ),
+      if (_showTutorial)
+        TutorialOverlay(
+          step: _tutorialStep,
+          onNext: () {
+            setState(() {
+              if (_tutorialStep < 2) {
+                _tutorialStep++;
+              } else {
+                _showTutorial = false;
+              }
+            });
+          },
+          onSkip: () {
+            setState(() {
+              _showTutorial = false;
+            });
+          },
+        ),
+        ],
+      ),
     );
   }
 
@@ -400,22 +460,68 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
         crossAxisAlignment: CrossAxisAlignment.end, // 下端揃え
         children: List.generate(gridSizeX, (i) {
           String hintText = _colHints[i].join("\n");
+          String currentHintText = _currentColHints[i].join("\n");
           return Container(
             width: currentSize,
             alignment: Alignment.bottomCenter,
             padding: const EdgeInsets.only(bottom: 4),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                hintText,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                   Text(
+                    hintText,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+                  ),
+                  const SizedBox(width: 4),
+                   Text(
+                    currentHintText,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold, 
+                      fontSize: fontSize,
+                      color: Colors.redAccent, 
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         }),
       ),
     );
+  }
+
+  List<List<int>> _generateCurrentGrid() {
+    int gridSizeX = _currentStage.gridSizeX;
+    int gridSizeY = _currentStage.gridSizeY;
+    List<List<int>> currentGrid = List.generate(gridSizeY, (_) => List.filled(gridSizeX, 0));
+
+    for (int y = 0; y < gridSizeY; y++) {
+      for (int i = 0; i < _rowPositions[y].length; i++) {
+        int start = _rowPositions[y][i].round();
+        int end = start + _rowHints[y][i];
+        for (int x = start; x < end; x++) {
+          if (x < gridSizeX) currentGrid[y][x] = 1;
+        }
+      }
+    }
+    return currentGrid;
+  }
+
+  void _updateCurrentHints() {
+      List<List<int>> grid = _generateCurrentGrid();
+      List<List<int>> newHints = _generateColHints(grid);
+       // Only update if changes to avoid unnecessary rebuilds if possible, 
+       // but for now simple setState is fine as it's driven by drag events anyway.
+       // However, _updateCurrentHints is inside setState already or called from it.
+       // Wait, _handleSlide calls setState. calling setState inside setState is bad.
+       // _updateCurrentHints should NOT call setState, it should just update the variable.
+       // The caller calls setState.
+       _currentColHints = newHints;
   }
 }
 
