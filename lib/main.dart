@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'tutorial_overlay.dart';
+import 'assist_overlay_painter.dart';
 
 void main() => runApp(const SlidePicrossApp());
 
@@ -11,7 +12,13 @@ class SlidePicrossApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const SlidePicrossGame(),
+      title: 'Slide Picross',
+      theme: ThemeData(
+        fontFamily: 'Roboto',
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFFF5E6D3), // Beige background
+      ),
+      home: const TitleScreen(),
     );
   }
 }
@@ -27,118 +34,696 @@ class StageData {
   int get gridSizeY => targetGrid.length;
 }
 
+// Global Stage Definition
+const List<StageData> allStages = [
+  // Practice 4x4
+  StageData(
+    title: "Level 1: Practice",
+    targetGrid: [
+      [1, 1, 1, 1],
+      [0, 1, 1, 1],
+      [0, 0, 1, 1],
+      [0, 0, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 2: Square",
+    targetGrid: [
+      [0, 0, 0, 0],
+      [0, 1, 1, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 3: Stripes",
+    targetGrid: [
+      [0, 1, 0, 1],
+      [0, 1, 0, 1],
+      [0, 1, 0, 1],
+      [0, 1, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 4: Frame", 
+    targetGrid: [
+      [1, 1, 1, 1],
+      [1, 0, 0, 1],
+      [1, 0, 0, 1],
+      [1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 5: L-Shape",
+    targetGrid: [
+      [0, 0, 0, 1],
+      [0, 0, 0, 1],
+      [0, 0, 0, 1],
+      [1, 1, 1, 1],
+    ],
+  ),
+  // 5x5 Levels
+  StageData(
+    title: "Level 6: Basic 5x5",
+    targetGrid: [
+      [0, 1, 1, 1, 0],
+      [1, 0, 0, 1, 0],
+      [1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 0],
+      [0, 0, 0, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 7: Smiley",
+    targetGrid: [
+      [0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0],
+      [1, 0, 0, 0, 1],
+      [0, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 8: Heart",
+    targetGrid: [
+      [0, 1, 0, 1, 0],
+      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 0],
+      [0, 0, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 9: Plus",
+    targetGrid: [
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+      [1, 1, 1, 1, 1],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 10: Temple",
+    targetGrid: [
+      [0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1], // Anchor
+      [0, 1, 1, 1, 0],
+      [0, 1, 0, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 11: Triangle",
+    targetGrid: [
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0], // Tip
+      [0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1], // Base
+    ],
+  ),
+  StageData(
+    title: "Level 12: Stairs (Right)",
+    targetGrid: [
+      [0, 0, 0, 0, 1],
+      [0, 0, 0, 1, 1],
+      [0, 0, 1, 1, 1],
+      [0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 13: Letter T",
+    targetGrid: [
+      [1, 1, 1, 1, 1],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 14: Letter H",
+    targetGrid: [
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 15: Reverse E",
+    targetGrid: [
+      [1, 1, 1, 1, 1],
+      [0, 0, 0, 0, 1],
+      [0, 1, 1, 1, 1],
+      [0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 16: Letter U",
+    targetGrid: [
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 17: Creeper",
+    targetGrid: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0],
+      [0, 0, 1, 0, 0],
+      [0, 1, 1, 1, 0],
+      [0, 1, 0, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 18: Invader",
+    targetGrid: [
+      [0, 0, 1, 0, 0],
+      [0, 1, 1, 1, 0],
+      [1, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1],
+      [1, 0, 1, 0, 1],
+    ],
+  ),
+  // 6x6 Levels (19-28)
+  StageData(
+    title: "Level 19: Pyramid",
+    targetGrid: [
+      [0, 0, 1, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+      [0, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 20: Hourglass",
+    targetGrid: [
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 21: House",
+    targetGrid: [
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 0],
+      [0, 1, 0, 0, 1, 0],
+      [0, 1, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 22: Fish",
+    targetGrid: [
+      [0, 0, 1, 0, 0, 0],
+      [0, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 23: Boat",
+    targetGrid: [
+      [0, 0, 0, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 24: Chair",
+    targetGrid: [
+      [0, 1, 0, 0, 0, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+      [0, 1, 1, 1, 1, 0],
+      [0, 1, 0, 0, 1, 0],
+      [0, 1, 0, 0, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 25: Key",
+    targetGrid: [
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 26: Lock",
+    targetGrid: [
+      [0, 1, 1, 1, 1, 0],
+      [1, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 0, 1, 1],
+      [1, 1, 0, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 27: Six",
+    targetGrid: [
+      [0, 0, 1, 1, 1, 1],
+      [0, 1, 1, 0, 0, 0],
+      [1, 1, 0, 0, 0, 0],
+      [1, 1, 1, 1, 1, 0],
+      [1, 1, 0, 0, 1, 1],
+      [0, 1, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 28: Steps",
+    targetGrid: [
+      [0, 0, 0, 0, 0, 1],
+      [0, 0, 0, 0, 1, 1],
+      [0, 0, 0, 1, 1, 1],
+      [0, 0, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1],
+    ],
+  ),
+  // 7x7 Levels (29-38)
+  StageData(
+    title: "Level 29: Big Heart",
+    targetGrid: [
+      [0, 1, 1, 0, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 30: Sword",
+    targetGrid: [
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 31: Shield",
+    targetGrid: [
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 0, 0, 0, 1, 1],
+      [1, 1, 0, 0, 0, 1, 1],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 32: Potion",
+    targetGrid: [
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 33: Skull",
+    targetGrid: [
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [1, 1, 0, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 0, 1, 0, 0],
+      [0, 0, 1, 0, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 34: Ghost",
+    targetGrid: [
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [1, 1, 0, 1, 0, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 0, 1, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 35: Pacman",
+    targetGrid: [
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 0, 0, 0],
+      [1, 1, 1, 0, 0, 0, 0],
+      [1, 1, 1, 1, 0, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 36: SpaceShip",
+    targetGrid: [
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 0, 1, 0, 0, 1],
+      [0, 0, 1, 1, 1, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 37: Alien",
+    targetGrid: [
+      [0, 0, 1, 0, 1, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 38: Star 7x7",
+    targetGrid: [
+      [0, 0, 0, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [1, 1, 0, 0, 0, 1, 1],
+    ],
+  ),
+  // 10x10 Levels
+  StageData(
+    title: "Level 39: Star (10x10)",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+      [1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 40: Spiral",
+    targetGrid: [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    ],
+  ),
+  StageData(
+    title: "Level 41: Tree",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 42: Face",
+    targetGrid: [
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+      [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+      [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+      [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+      [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 43: Note",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+      [0, 0, 1, 1, 1, 0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 1, 0, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 0, 1, 1, 1, 1],
+      [0, 1, 1, 1, 0, 0, 0, 1, 1, 0],
+      [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 44: Umbrella",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 45: House Big",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 46: Rocket",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+      [0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 47: Diamond Big",
+    targetGrid: [
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+    ],
+  ),
+  StageData(
+    title: "Level 48: Castle",
+    targetGrid: [
+      [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 1, 0, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Anchor
+      [0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Anchor
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Anchor
+    ],
+  ),
+];
+
+// Title Screen
+class TitleScreen extends StatelessWidget {
+  const TitleScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Slide Picross',
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Roboto',
+                color: Color(0xFF5D4037),
+              ),
+            ),
+            const SizedBox(height: 50),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const SlidePicrossGame(initialStageIndex: 0)),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6D4C41),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                textStyle: const TextStyle(fontSize: 24),
+              ),
+              child: const Text('Game Start'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const StageSelectScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                 backgroundColor: const Color(0xFF8D6E63),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                textStyle: const TextStyle(fontSize: 24),
+              ),
+              child: const Text('Stage Select'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Stage Select Screen
+class StageSelectScreen extends StatelessWidget {
+  const StageSelectScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // For Debug: All levels are cleared/unlocked
+    final clearedLevels = List.generate(allStages.length, (index) => true);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Stage Select'),
+        backgroundColor: const Color(0xFF8D6E63),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5, // Increase columns for easier navigation on desktop
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.0,
+          ),
+          itemCount: allStages.length,
+          itemBuilder: (context, index) {
+            final isUnlocked = clearedLevels[index];
+            return ElevatedButton(
+              onPressed: isUnlocked
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => SlidePicrossGame(initialStageIndex: index),
+                        ),
+                      );
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isUnlocked ? const Color(0xFF5D4037) : Colors.grey,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+
 class SlidePicrossGame extends StatefulWidget {
-  const SlidePicrossGame({super.key});
+  final int initialStageIndex;
+  const SlidePicrossGame({super.key, this.initialStageIndex = 0});
 
   @override
   State<SlidePicrossGame> createState() => _SlidePicrossGameState();
 }
 
 class _SlidePicrossGameState extends State<SlidePicrossGame> {
-  // ステージリスト定義
-  late final List<StageData> _stages;
-
   // Tutorial State
   bool _showTutorial = true;
   int _tutorialStep = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _stages = [
-      const StageData(
-        title: "Level 1: Tutorial",
-        targetGrid: [
-          [0, 1, 1, 1, 0],
-          [1, 0, 0, 1, 0],
-          [1, 1, 1, 1, 1],
-          [1, 0, 1, 1, 0],
-          [0, 0, 0, 1, 1],
-        ],
-      ),
-      const StageData(
-        title: "Level 2: Smiley",
-        targetGrid: [
-          [0, 1, 0, 1, 0],
-          [0, 1, 0, 1, 0],
-          [0, 0, 0, 0, 0],
-          [1, 0, 0, 0, 1],
-          [0, 1, 1, 1, 0],
-        ],
-      ),
-      const StageData(
-        title: "Level 3: Heart",
-        targetGrid: [
-          [0, 1, 0, 1, 0],
-          [1, 1, 1, 1, 1],
-          [1, 1, 1, 1, 1],
-          [0, 1, 1, 1, 0],
-          [0, 0, 1, 0, 0],
-        ],
-      ),
-      const StageData(
-        title: "Level 4: Star (10x10)",
-        targetGrid: [
-          [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-          [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-          [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-          [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
-          [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
-          [1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ],
-      ),
-      // 32x32 チェッカーボードパターン削除 (ユーザー要望)
-      // Level 6: User Image (Generated)
-      const StageData(
-        title: "Level 6: User Image",
-        targetGrid: [
-          [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-          [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-          [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-          [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-          [0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0],
-          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-          [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-          [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],
-          [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0],
-          [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-          [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-          [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-          [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-        ],
-      ),
-    ];
-    _loadStage(_currentStageIndex);
-    _checkTutorial();
-  }
-
-  void _checkTutorial() {
-    if (_currentStageIndex == 0) {
-      if (mounted) {
-        setState(() {
-          _showTutorial = true;
-          _tutorialStep = 0;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _showTutorial = false;
-        });
-      }
-    }
-  }
 
   int _currentStageIndex = 0;
   double _currentGridSize = 60.0;
@@ -149,12 +734,19 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
   late List<List<int>> _currentColHints;
   late List<List<double>> _rowPositions; // マス目単位：0.0, 1.0...
   bool _isCleared = false;
+  bool _isAssistMode = false; // アシストモードの状態
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with provided initialStageIndex
+    _loadStage(widget.initialStageIndex);
+  }
 
   void _loadStage(int index) {
     setState(() {
       _currentStageIndex = index;
-      _currentStage = _stages[index];
-      _rowHints = _generateRowHints(_currentStage.targetGrid);
+      _currentStage = allStages[index]; // Use global allStages
       _rowHints = _generateRowHints(_currentStage.targetGrid);
       _colHints = _generateColHints(_currentStage.targetGrid);
       _initializePositions();
@@ -167,6 +759,13 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
       } else {
         _showTutorial = false;
       }
+      
+      // Enable Assist Mode by default for Practice Levels (indices 0-4)
+      if (index <= 4) {
+        _isAssistMode = true;
+      } else {
+        _isAssistMode = false;
+      }
     });
     // ロード直後に判定（オートクリア等のチェック）
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -175,11 +774,11 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
   }
 
   void _nextStage() {
-    if (_currentStageIndex < _stages.length - 1) {
+    if (_currentStageIndex < allStages.length - 1) { // Use global allStages
       _loadStage(_currentStageIndex + 1);
     } else {
-      // 全クリ時の挙動（とりあえず最初に戻る）
-      _loadStage(0);
+      // 全クリ時の挙動（タイトルに戻る）
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
@@ -295,6 +894,8 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
     
     setState(() {
       _rowPositions[rowIndex] = positions;
+      // _updateCurrentHints(); // Already called in _handleSlide essentially, but calling here for snap correctness
+      // But we should recalculate exactly.
       _updateCurrentHints();
       _checkWinCondition();
     });
@@ -333,168 +934,6 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE0D7C6),
-      appBar: AppBar(
-        title: Text(_currentStage.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              setState(() {
-                _showTutorial = true;
-                _tutorialStep = 0;
-              });
-            },
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          LayoutBuilder(
-        builder: (context, constraints) {
-          double availableWidth = constraints.maxWidth;
-          double availableHeight = constraints.maxHeight - 50; 
-          
-          int gridSizeX = _currentStage.gridSizeX;
-          // アスペクト比計算 & 32x32などの場合は、画面内に収める初期倍率を決める
-          double boardSize = (availableWidth < availableHeight ? availableWidth : availableHeight) * 0.9;
-          _currentGridSize = boardSize / gridSizeX;
-
-          return Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isCleared)
-                       Padding(
-                        padding: const EdgeInsets.only(bottom: 20.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              "CLEAR!!",
-                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.redAccent),
-                            ),
-                            const SizedBox(height: 10),
-                            ElevatedButton.icon(
-                              onPressed: _nextStage,
-                              icon: const Icon(Icons.arrow_forward),
-                              label: Text(_currentStageIndex < _stages.length - 1 ? "Next Level" : "Back to Title"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orangeAccent,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    
-                    _buildVerticalHints(_currentGridSize),
-                    const SizedBox(height: 10),
-                    
-                    Container(
-                      // width removed for dynamic sizing
-                      padding: const EdgeInsets.all(2.0), // 枠線の内側にコンテンツを表示
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.brown[700]!, width: 2),
-                        color: Colors.brown[200],
-                      ),
-                      child: Column(
-                        children: List.generate(_currentStage.gridSizeY, (i) {
-                          return SlideRow(
-                            rodLengths: _rowHints[i],
-                            positions: _rowPositions[i],
-                            totalGrid: gridSizeX,
-                            gridSize: _currentGridSize,
-                            isOdd: i.isOdd,
-                            onSlide: (rodIdx, dx) => _handleSlide(i, rodIdx, dx),
-                            onSlideEnd: (rodIdx) => _handleSnap(i, rodIdx),
-                          );
-                        }),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-      if (_showTutorial)
-        TutorialOverlay(
-          step: _tutorialStep,
-          onNext: () {
-            setState(() {
-              if (_tutorialStep < 2) {
-                _tutorialStep++;
-              } else {
-                _showTutorial = false;
-              }
-            });
-          },
-          onSkip: () {
-            setState(() {
-              _showTutorial = false;
-            });
-          },
-        ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVerticalHints(double currentSize) {
-    // フォントサイズを調整（下限を1.0にして32x32でもなんとか表示されるように）
-    double fontSize = (currentSize * 0.35).clamp(1.0, 24.0);
-    int gridSizeX = _currentStage.gridSizeX;
-    
-    return SizedBox(
-      width: currentSize * gridSizeX,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end, // 下端揃え
-        children: List.generate(gridSizeX, (i) {
-          String hintText = _colHints[i].join("\n");
-          String currentHintText = _currentColHints[i].join("\n");
-          return Container(
-            width: currentSize,
-            alignment: Alignment.bottomCenter,
-            padding: const EdgeInsets.only(bottom: 4),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                   Text(
-                    hintText,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
-                  ),
-                  const SizedBox(width: 4),
-                   Text(
-                    currentHintText,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold, 
-                      fontSize: fontSize,
-                      color: Colors.redAccent, 
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
   List<List<int>> _generateCurrentGrid() {
     int gridSizeX = _currentStage.gridSizeX;
     int gridSizeY = _currentStage.gridSizeY;
@@ -515,13 +954,214 @@ class _SlidePicrossGameState extends State<SlidePicrossGame> {
   void _updateCurrentHints() {
       List<List<int>> grid = _generateCurrentGrid();
       List<List<int>> newHints = _generateColHints(grid);
-       // Only update if changes to avoid unnecessary rebuilds if possible, 
-       // but for now simple setState is fine as it's driven by drag events anyway.
-       // However, _updateCurrentHints is inside setState already or called from it.
-       // Wait, _handleSlide calls setState. calling setState inside setState is bad.
-       // _updateCurrentHints should NOT call setState, it should just update the variable.
-       // The caller calls setState.
+       // _currentColHints = newHints; // Correctly update state variable, caller calls setState
        _currentColHints = newHints;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE0D7C6),
+      appBar: AppBar(
+        title: Text(_currentStage.title),
+        backgroundColor: const Color(0xFF8D6E63),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isAssistMode ? Icons.lightbulb : Icons.lightbulb_outline,
+              color: _isAssistMode ? Colors.yellow : Colors.white,
+            ),
+            tooltip: "Toggle Assist",
+            onPressed: () {
+              setState(() {
+                _isAssistMode = !_isAssistMode;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              setState(() {
+                _showTutorial = true;
+                _tutorialStep = 0;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: "Back to Menu",
+            onPressed: () {
+               Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          )
+        ],
+      ),
+      body: Stack(
+        children: [
+          LayoutBuilder(
+        builder: (context, constraints) {
+          double availableWidth = constraints.maxWidth;
+          double availableHeight = constraints.maxHeight - 50; 
+          
+          int gridSizeX = _currentStage.gridSizeX;
+          // アスペクト比計算
+          double boardSize = (availableWidth < availableHeight ? availableWidth : availableHeight) * 0.9;
+          _currentGridSize = boardSize / gridSizeX;
+
+          return Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isCleared)
+                       Padding(
+                        padding: const EdgeInsets.only(bottom: 20.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "CLEAR!!",
+                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green),
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton.icon(
+                              onPressed: _nextStage,
+                              icon: const Icon(Icons.arrow_forward),
+                              label: Text(_currentStageIndex < allStages.length - 1 ? "Next Level" : "Back to Title"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orangeAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    _buildVerticalHints(_currentGridSize),
+                    const SizedBox(height: 10),
+                    
+                    Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2.0),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.brown[700]!, width: 2),
+                            color: Colors.brown[200],
+                          ),
+                          child: Column(
+                            children: List.generate(_currentStage.gridSizeY, (i) {
+                              return SlideRow(
+                                rodLengths: _rowHints[i],
+                                positions: _rowPositions[i],
+                                totalGrid: gridSizeX,
+                                gridSize: _currentGridSize,
+                                isOdd: i.isOdd,
+                                onSlide: (rodIdx, dx) => _handleSlide(i, rodIdx, dx),
+                                onSlideEnd: (rodIdx) => _handleSnap(i, rodIdx),
+                              );
+                            }),
+                          ),
+                        ),
+                        if (_isAssistMode)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: CustomPaint(
+                                painter: AssistOverlayPainter(
+                                  currentGrid: _generateCurrentGrid(),
+                                  gridSize: _currentGridSize + 0.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      if (_showTutorial)
+        TutorialOverlay(
+          step: _tutorialStep,
+          onNext: () {
+            setState(() {
+              if (_tutorialStep < 2) { // 3 steps total (0, 1, 2)
+                _tutorialStep++;
+              } else {
+                _showTutorial = false;
+              }
+            });
+          },
+          onSkip: () {
+            setState(() {
+              _showTutorial = false;
+            });
+          },
+        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalHints(double currentSize) {
+    double fontSize = (currentSize * 0.35).clamp(1.0, 24.0);
+    int gridSizeX = _currentStage.gridSizeX;
+    
+    return SizedBox(
+      width: currentSize * gridSizeX,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: List.generate(gridSizeX, (i) {
+          String hintText = _colHints[i].join("\n");
+          String currentHintText = _currentColHints.length > i ? _currentColHints[i].join("\n") : "";
+
+          return Container(
+            width: currentSize,
+            alignment: Alignment.bottomCenter,
+            padding: const EdgeInsets.only(bottom: 4),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                   Text(
+                    hintText,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold, 
+                      fontSize: fontSize,
+                      color: const Color(0xFF5D4037),
+                    ),
+                  ),
+                  if (_isAssistMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4.0),
+                      child: Text(
+                        currentHintText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold, 
+                          fontSize: fontSize,
+                          color: Colors.redAccent, 
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            ),
+          );
+        }),
+      ),
+    );
   }
 }
 
@@ -548,7 +1188,6 @@ class SlideRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // width removed for dynamic sizing based on child Stack/Row
       height: gridSize,
       decoration: BoxDecoration(
         color: isOdd ? Colors.brown[100] : Colors.brown[200],
@@ -558,9 +1197,8 @@ class SlideRow extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // 背景グリッド線 (薄く表示)
           Row(
-            mainAxisSize: MainAxisSize.min, // コンテンツ幅に合わせる（余分な空白削除）
+            mainAxisSize: MainAxisSize.min,
             children: List.generate(totalGrid, (index) {
               return Container(
                 width: gridSize,
@@ -573,7 +1211,6 @@ class SlideRow extends StatelessWidget {
               );
             }),
           ),
-          // 棒の表示
           ...List.generate(rodLengths.length, (index) {
             return Positioned(
               left: positions[index] * gridSize,
@@ -595,7 +1232,7 @@ class SlideRow extends StatelessWidget {
       height: gridSize,
       decoration: BoxDecoration(
         color: Colors.blueAccent,
-        borderRadius: BorderRadius.circular(8 * (gridSize / 60)), // 角丸調整
+        borderRadius: BorderRadius.circular(8 * (gridSize / 60)),
         border: Border.all(color: Colors.white24, width: 2),
         boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 4 * (gridSize / 60))],
       ),
